@@ -1,0 +1,31 @@
+NPCType: #まだ未使用
+  Villager: true
+  Zombie: true
+  Skeleton: true
+  Spider: true
+  CaveSpider: true
+  Husk: true
+  Sheep: true
+  Cow: true
+  Pig: true
+  Chicken: true
+  ##↑使いたい"EntityType"名を書き足せばOK!
+
+EntityOptions: #まだ未使用
+  EyeHeightYOffset: 0.5
+  Despawn: true
+  DefaultsDisplayName: "&b&lNPCShop"
+
+ShopOptions: #まだ未使用
+  MaxStackPerItem: 20
+
+Database:
+  host: localhost
+  port: 3306
+  database: database
+  username: username
+  password: password
+  NPCTable: npc_database
+
+
+
