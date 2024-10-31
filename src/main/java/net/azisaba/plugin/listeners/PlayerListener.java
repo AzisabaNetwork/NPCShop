@@ -10,14 +10,11 @@ import com.github.bea4dev.artgui.menu.ArtMenu;
 import com.github.bea4dev.artgui.menu.Menu;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import io.lumine.mythic.bukkit.MythicBukkit;
 import net.azisaba.plugin.NPCShop;
-import net.azisaba.plugin.database.DBShop;
+import net.azisaba.plugin.data.database.DBShop;
+import net.azisaba.plugin.npcshop.*;
 import net.azisaba.plugin.utils.*;
-import net.azisaba.plugin.utils.shop.NPCShopItem;
-import net.azisaba.plugin.utils.shop.ShopItemBuilder;
-import net.azisaba.plugin.utils.shop.ShopLocation;
-import net.azisaba.plugin.utils.shop.ShopUtil;
+import net.azisaba.plugin.utils.Util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
@@ -59,15 +56,25 @@ public class PlayerListener implements Listener {
                 org.bukkit.entity.Entity clicked = e.getRightClicked();
 
                 if (!ShopUtil.isShop(clicked)) return;
+                e.setCancelled(true);
+                ItemStack main = p.getInventory().getItemInMainHand();
+
+                if (p.getGameMode() == GameMode.CREATIVE) {
+                    String tag = null;
+                    if (main.getType() == Material.NAME_TAG) {
+                        String s = ShopEntity.getString(main.displayName());
+                        if (s != null && !s.isEmpty() && !s.isBlank()) {
+                            tag = s;
+                        }
+                    }
+                    DBShop.setShopEntity(ShopLocation.adapt(clicked.getLocation()), clicked.getType(), tag);
+                }
+
                 if (p.isSneaking()) {
                     if (p.getGameMode() == GameMode.CREATIVE) {
 
-                        e.setCancelled(true);
-                        ItemStack main = p.getInventory().getItemInMainHand();
-                        Location loc = clicked.getLocation();
-
                         if (ShopUtil.isShopItemsData(main)) {
-                            DBShop.setShopItems(ShopLocation.adapt(loc), main);
+                            DBShop.setShopItems(ShopLocation.adapt(clicked.getLocation()), main);
                             p.sendMessage(Component.text("トレードを追加しました。", NamedTextColor.GREEN));
                         }
                     }
@@ -98,10 +105,10 @@ public class PlayerListener implements Listener {
                 artMenu.open(p);
             }
 
-            private void onArtScreenEvent(@NotNull InventoryClickEvent e, Location loc) {
+            private void onArtScreenEvent(@NotNull InventoryClickEvent e, Location location) {
                 if (!(e.getInventory().getHolder() instanceof ArtGUIHolder)) return;
                 Player p = (Player) e.getWhoClicked();
-                if (p.getGameMode() == GameMode.CREATIVE && creativeAction(e, loc)) return;
+                if (p.getGameMode() == GameMode.CREATIVE && creativeAction(e, location)) return;
 
                 e.setCancelled(true);
                 ItemStack current = e.getCurrentItem();
@@ -115,13 +122,13 @@ public class PlayerListener implements Listener {
 
                 NPCShopItem.Deserializer outPut = new NPCShopItem.Deserializer(current, new ArrayList<>()); //処理本体
                 ItemStack origin = outPut.item();
-                String mmid = MythicUtil.getMythicID(origin);
+                String mmid = Util.getMythicID(origin);
                 if (mmid == null) return;
 
                 List<String> idList = new ArrayList<>();
                 List<Integer> countList = new ArrayList<>();
                 for (ItemStack stack : outPut.list()) {
-                    String s = MythicUtil.getMythicID(stack);
+                    String s = Util.getMythicID(stack);
                     if (s == null) continue;
                     idList.add(s);
                     countList.add(stack.getAmount() * multiplier);
@@ -136,11 +143,12 @@ public class PlayerListener implements Listener {
                 p.playSound(p, Sound.ENTITY_VILLAGER_NO, 1, 1);
             }
 
-            private boolean creativeAction(@NotNull InventoryClickEvent e, Location loc) {
+            private boolean creativeAction(@NotNull InventoryClickEvent e, @NotNull Location loc) {
                 ItemStack current = e.getCurrentItem();
                 ItemStack cursor = e.getCursor();
+                ShopLocation shop = ShopLocation.adapt(loc);
 
-                List<ItemStack> list = new ArrayList<>(DBShop.getShopItems().get(ShopLocation.adapt(loc)));
+                List<ItemStack> list = new ArrayList<>(DBShop.getShopItems().get(shop));
                 int i = list.indexOf(current);
                 if (current != null) {
                     list.add(i, cursor);
@@ -151,7 +159,7 @@ public class PlayerListener implements Listener {
                 e.setCurrentItem(cursor);
                 e.setCursor(current);
 
-                DBShop.replaceShopItem(ShopLocation.adapt(loc), list);
+                DBShop.replaceShopItem(shop, list);
                 return true;
             }
 
@@ -172,7 +180,7 @@ public class PlayerListener implements Listener {
             private void processItems(@NotNull Player p, @NotNull List<String> stringList, @NotNull List<Integer> countList, BiFunction<ItemStack, Integer, Integer> processor) {
                 for (ItemStack item : p.getInventory().getContents()) {
                     if (item == null) continue;
-                    String id = MythicUtil.getMythicID(item);
+                    String id = Util.getMythicID(item);
                     if (id == null || !stringList.contains(id)) continue;
 
                     int size = getIndex(stringList, id);
@@ -197,7 +205,7 @@ public class PlayerListener implements Listener {
             }
 
             private void give(Player p, String mmid, int getAmount) {
-                ItemStack item = MythicBukkit.inst().getItemManager().getItemStack(mmid, getAmount);
+                ItemStack item = Util.getMythicItemStack(mmid, getAmount);
                 if (item == null) return;
                 for (ItemStack stack : p.getInventory().addItem(item).values()) {
                     p.getWorld().dropItemNaturally(p.getLocation(), stack);
@@ -222,7 +230,7 @@ public class PlayerListener implements Listener {
             @NotNull
             private List<ItemStack> getShopContents(Location loc) {
                 List<ItemStack> list = new ArrayList<>();
-                if (DBShop.contains(loc)) {
+                if (DBShop.itemContains(loc)) {
                     list.addAll(DBShop.getShopItems().get(ShopLocation.adapt(loc)));
                 }
                 return list;

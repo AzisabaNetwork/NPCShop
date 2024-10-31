@@ -1,4 +1,4 @@
-package net.azisaba.plugin.database;
+package net.azisaba.plugin.data.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -16,23 +16,26 @@ public class DBConnector {
 
     protected static HikariDataSource dataSource;
 
-    protected static String shopTable = JavaPlugin.getPlugin(NPCShop.class).getConfig().getString("Database.NPCTable");
+    protected static String shopTable = JavaPlugin.getPlugin(NPCShop.class).getConfig().getString("Database.table");
 
-
-    public void initialize(NPCShop plugin) {
+    public void initialize(@NotNull NPCShop plugin) {
+        if (!plugin.getConfig().getBoolean("Database.use", false)) return;
         openConnection(plugin);
         try {
             try (Connection con = dataSource.getConnection()) {
                 try (Statement statement = con.createStatement()) {
-                    ResultSet resultSet = statement.executeQuery("SHOW TABLES LIKE '" + shopTable + "'");
-                    if (!resultSet.next()) {
-                        statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + shopTable + " (" +
+                    ResultSet shopData = statement.executeQuery("SHOW TABLES LIKE '" + shopTable + "'");
+                    if (!shopData.next()) {
+                        statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + shopTable +
+                                " (" +
                                 "name varchar(200) NOT NULL, " +
                                 "x int NOT NULL, " +
                                 "y int NOT NULL, " +
                                 "z int NOT NULL, " +
                                 "slot int NOT NULL DEFAULT 0, " +
                                 "data MEDIUMBLOB NOT NULL, " +
+                                "entity_name varchar(40), " +
+                                "entity_type varchar(20), " +
                                 "PRIMARY KEY (name, x, y, z, slot)" +
                                 ")");
                     }
