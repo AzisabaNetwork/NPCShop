@@ -1,12 +1,10 @@
-package net.azisaba.plugin.utils.shop;
+package net.azisaba.plugin.utils;
 
 import org.bukkit.NamespacedKey;
 
-public class ShopKeys {
+public class Keys {
 
-    public static final NamespacedKey SHOP_NAME = new NamespacedKey("npcshop", "shop_name");
-
-    public static final NamespacedKey SHOP_TYPE = new NamespacedKey("npcshop", "shop_type");
+    public static final NamespacedKey SHOP_KEEPER = new NamespacedKey("npcshop", "shop_keeper");
 
     public static final NamespacedKey SHOP_ITEMS = new NamespacedKey("npcshop", "shop_items");
 

@@ -2,13 +2,15 @@ package net.azisaba.plugin;
 
 import com.github.bea4dev.artgui.ArtGUI;
 import net.azisaba.plugin.commands.ShopCommand;
-import net.azisaba.plugin.database.DBConnector;
-import net.azisaba.plugin.database.DBShop;
-import net.azisaba.plugin.database.SaveDB;
+import net.azisaba.plugin.data.database.DBConnector;
+import net.azisaba.plugin.data.database.DBShop;
+import net.azisaba.plugin.data.SaveDB;
 import net.azisaba.plugin.listeners.InventoryListener;
 import net.azisaba.plugin.listeners.PlayerListener;
+import net.azisaba.plugin.npcshop.NPCEntity;
+import net.azisaba.plugin.npcshop.ShopEntity;
+import net.azisaba.plugin.npcshop.ShopLocation;
 import org.bukkit.Bukkit;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -21,14 +23,14 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
     public void onEnable() {
         saveDefaultConfig();
 
+        registerClockTimer();
         registerListeners();
         registerCommands();
-        registerClockTimer();
     }
 
     @Override
     public void onDisable() {
-
+        new SaveDB().save(true);
         DBConnector.close();
     }
 
@@ -45,8 +47,19 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
 
     @Override
     public void registerClockTimer() {
+        if (!getConfig().getBoolean("Database.use", false)) return;
+        runAsync(() -> new DBConnector().initialize(this));
         runAsyncDelayed(() -> new DBShop().load(), 100);
         runSyncTimer(() -> new SaveDB().save(false), 18000, 18000);
+        runAsyncTimer(() -> {
+            if (getConfig().getBoolean("EntityOptions.UseMythicMobs", false)) return;
+            DBShop.getShopEntity().entries().stream().toList().forEach((e) -> {
+                ShopEntity shop = e.getValue();
+                if (shop.type() == null) return;
+                runSync(() -> new NPCEntity().spawn(ShopLocation.adapt(e.getKey()), shop.type()));
+
+            });
+        }, 6000, 6000);
     }
 
     @NotNull

@@ -1,12 +1,14 @@
-package net.azisaba.plugin.utils.shop;
+package net.azisaba.plugin.npcshop;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
-import net.azisaba.plugin.utils.MythicUtil;
+import net.azisaba.plugin.NPCShop;
+import net.azisaba.plugin.utils.Util;
+import net.azisaba.plugin.utils.Keys;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,13 +22,13 @@ public class NPCShopItem {
         String[] split = mmidAndAmount.split(" ");
         String mmid = split[0];
         int amount = Integer.parseInt(split[1]);
-        return MythicBukkit.inst().getItemManager().getItemStack(mmid, amount);
+        return Util.getMythicItemStack(mmid, amount);
     }
 
     @Nullable
     protected static String setMythicItem(@NotNull ItemStack mythic) {
-        if (!MythicUtil.isMythicItem(mythic)) return null;
-        String mmid = MythicUtil.getMythicID(mythic);
+        if (!Util.isMythicItem(mythic)) return null;
+        String mmid = Util.getMythicID(mythic);
         return mmid + " " + mythic.getAmount();
     }
 
@@ -56,16 +58,18 @@ public class NPCShopItem {
 
     public record Serializer(ItemStack item, List<ItemStack> list) {
 
+        private static final int max = JavaPlugin.getPlugin(NPCShop.class).getConfig().getInt("ShopOptions.MaxStackPerItem", 20);
+
         public Serializer(@NotNull ItemStack item, @NotNull List<ItemStack> list) {
             ItemMeta meta = item.getItemMeta();
             for (ItemStack is : list) {
                 if (is == null) continue;
-                if (!MythicUtil.isMythicItem(is)) continue;
+                if (!Util.isMythicItem(is)) continue;
                 int i = 0;
                 setData(meta.getPersistentDataContainer(), i, is);
             }
-            if (!meta.getPersistentDataContainer().has(ShopKeys.SHOP_ITEM_DATA, PersistentDataType.BOOLEAN)) {
-                meta.getPersistentDataContainer().set(ShopKeys.SHOP_ITEM_DATA, PersistentDataType.BOOLEAN, true);
+            if (!meta.getPersistentDataContainer().has(Keys.SHOP_ITEM_DATA, PersistentDataType.BOOLEAN)) {
+                meta.getPersistentDataContainer().set(Keys.SHOP_ITEM_DATA, PersistentDataType.BOOLEAN, true);
             }
             item.setItemMeta(meta);
             this.item = item;
@@ -73,7 +77,7 @@ public class NPCShopItem {
         }
 
         private void setData(@NotNull PersistentDataContainer pc, int i, ItemStack item) {
-            if (i == 100) return;
+            if (i == max) return;
             NamespacedKey key = new NamespacedKey("npcshop", "recipe_" + i);
             if (pc.has(key, PersistentDataType.STRING)) {
                 i++;

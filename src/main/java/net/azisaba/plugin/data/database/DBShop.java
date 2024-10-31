@@ -1,13 +1,15 @@
-package net.azisaba.plugin.database;
+package net.azisaba.plugin.data.database;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import net.azisaba.plugin.utils.MythicUtil;
-import net.azisaba.plugin.utils.shop.ShopLocation;
+import net.azisaba.plugin.npcshop.ShopEntity;
+import net.azisaba.plugin.utils.Util;
+import net.azisaba.plugin.npcshop.ShopLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,6 +22,8 @@ import java.util.List;
 public class DBShop extends DBConnector {
 
     private static final Multimap<ShopLocation, ItemStack> shopItemsMap = Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
+
+    private static final Multimap<ShopLocation, ShopEntity> shopEntityMap = Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
     public void delete(Connection con) {
         try {
@@ -43,20 +47,27 @@ public class DBShop extends DBConnector {
         try {
             int i = 0;
             for (ItemStack item : list) {
-                if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
-                try (PreparedStatement state = con.prepareStatement("INSERT INTO " + shopTable + " (name, x, y, z, slot, data) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE data =?")) {
+                for (ShopEntity shop : shopEntityMap.get(loc).stream().toList()) {
+                    if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
+                    try (PreparedStatement state = con.prepareStatement("INSERT INTO " + shopTable + " (name, x, y, z, slot, data, entity_name, entity_type) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE data =?, entity_name=?, entity_type=?")) {
 
-                    state.setString(1, loc.w().getName());
-                    state.setInt(2, loc.x());
-                    state.setInt(3, loc.y());
-                    state.setInt(4, loc.z());
-                    state.setInt(5, i);
-                    state.setBytes(6, item.serializeAsBytes());
-                    state.setBytes(7, item.serializeAsBytes());
-                    state.executeUpdate();
-                    i++;
+                        String t = shop.type() == null ? null : shop.type().name();
+
+                        state.setString(1, loc.w().getName());
+                        state.setInt(2, loc.x());
+                        state.setInt(3, loc.y());
+                        state.setInt(4, loc.z());
+                        state.setInt(5, i);
+                        state.setBytes(6, item.serializeAsBytes());
+                        state.setString(7, shop.name());
+                        state.setString(8, t);
+                        state.setBytes(9, item.serializeAsBytes());
+                        state.setString(10, shop.name());
+                        state.setString(11, t);
+                        state.executeUpdate();
+                        i++;
+                    }
                 }
-
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -77,10 +88,19 @@ public class DBShop extends DBConnector {
                         ShopLocation loc = new ShopLocation(w, x, y, z);
 
                         ItemStack item = ItemStack.deserializeBytes(result.getBytes("data"));
-                        String mmid = MythicUtil.getMythicID(item);
-                        ItemStack mythic = MythicUtil.getMythicItemStack(mmid, item.getAmount());
+                        if (Util.getMythic()) {
+                            String mmid = Util.getMythicID(item);
+                            ItemStack mythic = Util.getMythicItemStack(mmid, item.getAmount());
+                            if (mythic == null) continue;
+                            shopItemsMap.put(loc, Util.dataConvert(mythic, item));
+                        } else {
+                            shopItemsMap.put(loc, item);
+                        }
 
-                        shopItemsMap.put(loc, mythic);
+                        String name = result.getString("entity_name");
+                        String type = result.getString("entity_type");
+                        shopEntityMap.put(loc, new ShopEntity(name, EntityType.fromName(type)));
+
                     }
                 }
             }
@@ -93,26 +113,42 @@ public class DBShop extends DBConnector {
         return shopItemsMap;
     }
 
-    public static boolean contains(@NotNull Location loc) {
-        for (ShopLocation record : getShopItems().keySet()) {
-            if (record.isSimilar(loc)) return true;
-        }
-        return false;
+    public static Multimap<ShopLocation, ShopEntity> getShopEntity() {
+        return shopEntityMap;
+    }
+
+    public static boolean itemContains(@NotNull Location loc) {
+        return shopItemsMap.containsKey(ShopLocation.adapt(loc));
     }
 
     public static void setShopItems(@NotNull ShopLocation loc, ItemStack add) {
         shopItemsMap.put(loc, add);
+        defaultShopEntity(loc);
     }
+
+    public static void setShopEntity(ShopLocation loc, EntityType type, String tag) {
+        shopEntityMap.put(loc, new ShopEntity(tag, type));
+    }
+
 
     public static void replaceShopItem(@NotNull ShopLocation loc, List<ItemStack> list) {
         removeShopItems(loc);
         shopItemsMap.putAll(loc, list);
+        defaultShopEntity(loc);
     }
+
 
     public static void removeShopItems(@NotNull ShopLocation loc) {
         shopItemsMap.removeAll(loc);
     }
 
+    @SuppressWarnings("unused")
     public static void removeShopItems(@NotNull ShopLocation loc, ItemStack item) {
-        shopItemsMap.remove(loc, item);}
+        shopItemsMap.remove(loc, item);
+    }
+
+    private static void defaultShopEntity(ShopLocation loc) {
+        if (shopEntityMap.containsKey(loc)) return;
+        setShopEntity(loc, null, null);
+    }
 }

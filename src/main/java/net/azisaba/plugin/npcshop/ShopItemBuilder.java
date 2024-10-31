@@ -1,5 +1,6 @@
-package net.azisaba.plugin.utils.shop;
+package net.azisaba.plugin.npcshop;
 
+import net.azisaba.plugin.utils.Keys;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
@@ -20,15 +21,10 @@ public class ShopItemBuilder {
 
     private String name = null;
 
-    private String[] lore = null;
+    private final String[] lore = null;
 
     public ShopItemBuilder name(String name) {
         this.name = name;
-        return this;
-    }
-
-    public ShopItemBuilder lore(String... lore) {
-        this.lore = lore;
         return this;
     }
 
@@ -48,7 +44,7 @@ public class ShopItemBuilder {
             itemMeta.lore(loreList);
         }
 
-        itemMeta.getPersistentDataContainer().set(ShopKeys.SHOP_ITEMS, PersistentDataType.STRING, "true");
+        itemMeta.getPersistentDataContainer().set(Keys.SHOP_ITEMS, PersistentDataType.STRING, "true");
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }

@@ -1,7 +1,9 @@
-package net.azisaba.plugin.database;
+package net.azisaba.plugin.data;
 
 import net.azisaba.plugin.NPCShop;
-import net.azisaba.plugin.utils.shop.ShopLocation;
+import net.azisaba.plugin.data.database.DBConnector;
+import net.azisaba.plugin.data.database.DBShop;
+import net.azisaba.plugin.npcshop.ShopLocation;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -19,8 +21,11 @@ public class SaveDB extends DBConnector {
     }
 
     public void saveShops(boolean force, boolean delete) {
+        NPCShop plugin = JavaPlugin.getPlugin(NPCShop.class);
+        if (!plugin.getConfig().getBoolean("Database.use", false)) return;
+
         if (force) saveShopApply(delete);
-        else JavaPlugin.getPlugin(NPCShop.class).runAsync(()-> saveShopApply(delete));
+        else plugin.runAsync(()-> saveShopApply(delete));
     }
 
     private void saveShopApply(boolean delete) {
@@ -35,7 +40,7 @@ public class SaveDB extends DBConnector {
             }
             time = System.currentTimeMillis() - time;
             for (Player p : Bukkit.getOnlinePlayers()) {
-                if (!p.hasPermission("mmocore.sql.notifications")) continue;
+                if (!p.hasPermission("npcshop.sql.notifications")) continue;
                 p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize("&fショップ情報: &b" + time + "ms"));
             }
         } catch (SQLException e) {

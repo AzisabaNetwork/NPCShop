@@ -2,11 +2,11 @@ package net.azisaba.plugin.listeners;
 
 import com.github.bea4dev.artgui.menu.ArtGUIHolder;
 import net.azisaba.plugin.NPCShop;
-import net.azisaba.plugin.utils.MythicUtil;
-import net.azisaba.plugin.utils.holder.ShopHolder;
-import net.azisaba.plugin.utils.shop.NPCShopItem;
-import net.azisaba.plugin.utils.shop.ShopKeys;
-import net.azisaba.plugin.utils.shop.ShopUtil;
+import net.azisaba.plugin.utils.Util;
+import net.azisaba.plugin.npcshop.ShopHolder;
+import net.azisaba.plugin.npcshop.NPCShopItem;
+import net.azisaba.plugin.utils.Keys;
+import net.azisaba.plugin.npcshop.ShopUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
@@ -48,9 +48,9 @@ public class InventoryListener implements Listener {
             for (int i = 0; i < inv.getSize(); i++) {
                 ItemStack item = inv.getItem(i);
                 if (item == null) continue;
-                if (!MythicUtil.isMythicItem(item)) {
+                if (!Util.isMythicItem(item)) {
                     ItemMeta meta = item.getItemMeta();
-                    meta.getPersistentDataContainer().set(ShopKeys.SHOP_EDITOR_TEMP, PersistentDataType.STRING, "true");
+                    meta.getPersistentDataContainer().set(Keys.SHOP_EDITOR_TEMP, PersistentDataType.STRING, "true");
                     meta.getPersistentDataContainer().set(new NamespacedKey("mythicmobs", "type"), PersistentDataType.STRING,  item.getType().toString().toLowerCase());
                     item.setItemMeta(meta);
                     inv.setItem(i, item);
@@ -69,7 +69,7 @@ public class InventoryListener implements Listener {
             Inventory inv = processInventory(e.getInventory());
             for (ItemStack item : inv.getContents()) {
                 if (item == null) continue;
-                if (MythicUtil.isMythicItem(item)) {
+                if (Util.isMythicItem(item)) {
                     h.getInventory().addItem(item).forEach((i, stack) -> h.getWorld().dropItem(h.getLocation(), stack));
                 }
             }
@@ -80,10 +80,10 @@ public class InventoryListener implements Listener {
                 ItemStack item = inv.getItem(i);
                 if (item == null) continue;
                 ItemMeta meta = item.getItemMeta();
-                if (meta.getPersistentDataContainer().has(ShopKeys.SHOP_EDITOR_TEMP)) {
-                    meta.getPersistentDataContainer().remove(ShopKeys.SHOP_EDITOR_TEMP);
+                if (meta.getPersistentDataContainer().has(Keys.SHOP_EDITOR_TEMP)) {
+                    meta.getPersistentDataContainer().remove(Keys.SHOP_EDITOR_TEMP);
 
-                    if (!meta.getPersistentDataContainer().has(ShopKeys.SHOP_ITEM_DATA)) {
+                    if (!meta.getPersistentDataContainer().has(Keys.SHOP_ITEM_DATA)) {
                         meta.getPersistentDataContainer().remove(new NamespacedKey("mythicmobs", "type"));
                     }
                 }
@@ -126,9 +126,9 @@ public class InventoryListener implements Listener {
                     }
                 }
                 if (e.getSlot() == 0) {
-                    processItem(e, e.getCursor(), MythicUtil.isMythicItem(e.getCursor()));
+                    processItem(e, e.getCursor(), Util.isMythicItem(e.getCursor()));
                 } else if (e.getSlot() < 7) {
-                    processItem(e, e.getCursor(), MythicUtil.isMythicItem(e.getCursor()) && !ShopUtil.isShopItemsData(e.getCursor()));
+                    processItem(e, e.getCursor(), Util.isMythicItem(e.getCursor()) && !ShopUtil.isShopItemsData(e.getCursor()));
                 }
             }
         }
@@ -161,7 +161,7 @@ public class InventoryListener implements Listener {
                ItemStack i1 = inventory.getItem(0);
                int c1 = 0;
                int c2 = 0;
-               if (i1 == null || !MythicUtil.isMythicItem(i1)) {
+               if (i1 == null || !Util.isMythicItem(i1)) {
                    inventory.setItem(0, ShopHolder.getPane());
                } else {
                    c1++;
@@ -169,7 +169,7 @@ public class InventoryListener implements Listener {
 
                for (int i = 2; i < 7; i++) {
                    ItemStack i2 = inventory.getItem(i);
-                   if (i2 == null || !MythicUtil.isMythicItem(i2) || ShopUtil.isShopItemsData(i2)) {
+                   if (i2 == null || !Util.isMythicItem(i2) || ShopUtil.isShopItemsData(i2)) {
                        inventory.setItem(i, ShopHolder.getPane());
                    } else {
                        c2++;
@@ -198,7 +198,7 @@ public class InventoryListener implements Listener {
             for (int i = 2; i < 7; i++) {
 
                 ItemStack ss = inv.getItem(i);
-                if (ss == null || !MythicUtil.isMythicItem(ss)) continue;
+                if (ss == null || !Util.isMythicItem(ss)) continue;
                 list.add(ss);
             }
             ItemStack item = new NPCShopItem.Serializer(s0, list).item();
