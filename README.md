@@ -7,6 +7,7 @@ config.ymlのDatabaseの項目を正しく入力し、最後にuseをtrueにす�
 Database:
   use: false
 ```
+依存関係にLibsDisguisesとpacketeventsが必要、MythicMobsは任意
 -------------------------------------------------------------------
 
 EntityOptions.UseMythicMobsの項目は、NPCとしてMMのmobを使用するかのオプションです。
