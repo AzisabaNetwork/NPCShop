@@ -29,7 +29,7 @@ public class ShopHolder implements InventoryHolder {
     @NotNull
     @Contract(" -> new")
     public static ItemStack getPane() {
-        return new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
+        return new ItemStack(Material.BLACK_STAINED_GLASS_PANE, 1);
     }
 
     @NotNull

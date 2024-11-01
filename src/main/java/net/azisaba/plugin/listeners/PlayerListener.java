@@ -13,19 +13,24 @@ import com.google.common.collect.Multimap;
 import net.azisaba.plugin.NPCShop;
 import net.azisaba.plugin.data.database.DBShop;
 import net.azisaba.plugin.npcshop.*;
-import net.azisaba.plugin.utils.*;
+import net.azisaba.plugin.utils.CoolTime;
+import net.azisaba.plugin.utils.Keys;
 import net.azisaba.plugin.utils.Util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +46,18 @@ public class PlayerListener implements Listener {
     public void initialize(NPCShop npcShop) {
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(new PlayerListener.Interact.Entity(), npcShop);
+        pm.registerEvents(new PlayerListener.Join(), npcShop);
+    }
+
+    public static class Join extends PlayerListener {
+
+        @EventHandler
+        public void onJoin(@NotNull PlayerJoinEvent e) {
+            JavaPlugin.getPlugin(NPCShop.class).runAsyncDelayed(()-> {
+                InventoryListener.Close.processInventory(e.getPlayer().getInventory(), Keys.SHOP_BUY_TEMP);
+                InventoryListener.Close.processInventory(e.getPlayer().getInventory(), Keys.SHOP_EDITOR_TEMP);
+            }, 10);
+        }
     }
 
     public static class Interact extends PlayerListener {
@@ -56,8 +73,9 @@ public class PlayerListener implements Listener {
                 org.bukkit.entity.Entity clicked = e.getRightClicked();
 
                 if (!ShopUtil.isShop(clicked)) return;
-                e.setCancelled(true);
                 ItemStack main = p.getInventory().getItemInMainHand();
+                clicked.setRotation(p.getYaw() + 180, 0);
+                e.setCancelled(true);
 
                 if (p.getGameMode() == GameMode.CREATIVE) {
                     String tag = null;
@@ -67,7 +85,12 @@ public class PlayerListener implements Listener {
                             tag = s;
                         }
                     }
-                    DBShop.setShopEntity(ShopLocation.adapt(clicked.getLocation()), clicked.getType(), tag);
+                    String st = clicked.getPersistentDataContainer().get(Keys.SHOP_TYPE, PersistentDataType.STRING);
+                    EntityType type = st == null ? null : EntityType.fromName(st);
+                    DBShop.setShopEntity(ShopLocation.adapt(clicked.getLocation()), type, tag);
+                    if (tag != null) {
+                        p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(tag + " &fに名前を変更しました。"));
+                    }
                 }
 
                 if (p.isSneaking()) {
@@ -85,14 +108,17 @@ public class PlayerListener implements Listener {
 
             private void openShopScreen(Player p, @NotNull Location location) {
                 ShopLocation loc = new ShopLocation(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
-                List<ItemStack> list = getShopContents(location);
+                List<ItemStack> list = getShopContents(loc);
                 Artist artist = artGui();
                 ArtMenu artMenu = artist.createMenu(JavaPlugin.getPlugin(NPCShop.class).getArtGUI(), "&b&lNPCShop &r[{CurrentPage}/{MaxPage}]");
                 artMenu.asyncCreate(menu -> {
 
                     int count = 0;
-                    for (ItemStack stack : list) {
-                        menu.setButton(getPage(count), getSlot(count), new ArtButton(stack).listener((e, menu1) -> onArtScreenEvent(e, location)));
+                    if (!list.isEmpty()) {
+                        for (ItemStack stack : list) {
+                            menu.setButton(getPage(count), getSlot(count), new ArtButton(stack).listener((e, menu1) -> onArtScreenEvent(e, location)));
+                            count++;
+                        }
                     }
                 });
                 artMenu.onClose((event, menu) -> {
@@ -121,21 +147,19 @@ public class PlayerListener implements Listener {
                 if (e.isShiftClick()) multiplier = 16;
 
                 NPCShopItem.Deserializer outPut = new NPCShopItem.Deserializer(current, new ArrayList<>()); //処理本体
-                ItemStack origin = outPut.item();
-                String mmid = Util.getMythicID(origin);
+                String mmid = Util.getMythicID(current);
                 if (mmid == null) return;
 
                 List<String> idList = new ArrayList<>();
                 List<Integer> countList = new ArrayList<>();
                 for (ItemStack stack : outPut.list()) {
-                    String s = Util.getMythicID(stack);
-                    if (s == null) continue;
+                    String s = Util.getMythicID(stack) == null ? stack.getType().toString().toLowerCase() : Util.getMythicID(stack);
                     idList.add(s);
                     countList.add(stack.getAmount() * multiplier);
                 }
 
-                if (has(p, idList, countList)) {
-                    buy(p, idList, countList, mmid, origin.getAmount() * multiplier);
+                if (!idList.isEmpty() && !countList.isEmpty() && has(p, idList, countList) && !p.getInventory().isEmpty()) {
+                    buy(p, idList, countList, mmid, current.getAmount() * multiplier);
                     return;
                 }
 
@@ -150,6 +174,7 @@ public class PlayerListener implements Listener {
 
                 List<ItemStack> list = new ArrayList<>(DBShop.getShopItems().get(shop));
                 int i = list.indexOf(current);
+                if (i == -1) return false;
                 if (current != null) {
                     list.add(i, cursor);
                     i++;
@@ -161,6 +186,14 @@ public class PlayerListener implements Listener {
 
                 DBShop.replaceShopItem(shop, list);
                 return true;
+            }
+
+            private void give(Player p, String mmid, int getAmount) {
+                ItemStack item = Util.getMythicItemStack(mmid, getAmount);
+                if (item == null) return;
+                for (ItemStack stack : p.getInventory().addItem(item).values()) {
+                    p.getWorld().dropItemNaturally(p.getLocation(), stack);
+                }
             }
 
             private void buy(@NotNull Player p, @NotNull List<String> stringList, List<Integer> countList, String mmid, int getAmount) {
@@ -175,6 +208,31 @@ public class PlayerListener implements Listener {
                     }
                 });
                 bought(p, mmid, getAmount);
+            }
+
+            private void bought(@NotNull Player p, String mmid, int getAmount) {
+                p.sendMessage(Component.text("商品を購入しました。", NamedTextColor.GREEN));
+                p.playSound(p, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+                p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 1, 2);
+                give(p, mmid, getAmount);
+                p.playSound(p, Sound.ENTITY_VILLAGER_YES, 1, 1);
+            }
+
+            private boolean has(@NotNull Player p, @NotNull List<String> stringList, List<Integer> countList) {
+                List<String> stringListCopy = new ArrayList<>(stringList);
+                List<Integer> countListCopy = new ArrayList<>(countList);
+
+                processItems(p, stringListCopy, countListCopy, (item, amount) -> {
+                    if (item.getAmount() < amount) {
+                        amount -= item.getAmount();
+                        return amount;
+                    } else {
+                        return 0;
+                    }
+                });
+
+                return stringListCopy.isEmpty() && countListCopy.isEmpty();
             }
 
             private void processItems(@NotNull Player p, @NotNull List<String> stringList, @NotNull List<Integer> countList, BiFunction<ItemStack, Integer, Integer> processor) {
@@ -195,43 +253,11 @@ public class PlayerListener implements Listener {
                 }
             }
 
-            private void bought(@NotNull Player p, String mmid, int getAmount) {
-                p.sendMessage(Component.text("商品を購入しました。", NamedTextColor.GREEN));
-                p.playSound(p, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                p.playSound(p, Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-                p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 1, 2);
-                give(p, mmid, getAmount);
-                p.playSound(p, Sound.ENTITY_VILLAGER_YES, 1, 1);
-            }
-
-            private void give(Player p, String mmid, int getAmount) {
-                ItemStack item = Util.getMythicItemStack(mmid, getAmount);
-                if (item == null) return;
-                for (ItemStack stack : p.getInventory().addItem(item).values()) {
-                    p.getWorld().dropItemNaturally(p.getLocation(), stack);
-                }
-            }
-
-            private boolean has(@NotNull Player p, @NotNull List<String> stringList, List<Integer> countList) {
-                List<String> stringListCopy = new ArrayList<>(stringList);
-                List<Integer> countListCopy = new ArrayList<>(countList);
-
-                processItems(p, stringListCopy, countListCopy, (item, amount) -> {
-                    if (item.getAmount() < amount) {
-                        amount -= item.getAmount();
-                        return amount;
-                    } else {
-                        return 0;
-                    }
-                });
-                return stringListCopy.isEmpty() && countListCopy.isEmpty();
-            }
-
             @NotNull
-            private List<ItemStack> getShopContents(Location loc) {
+            private List<ItemStack> getShopContents(ShopLocation loc) {
                 List<ItemStack> list = new ArrayList<>();
                 if (DBShop.itemContains(loc)) {
-                    list.addAll(DBShop.getShopItems().get(ShopLocation.adapt(loc)));
+                    list.addAll(DBShop.getShopItems().get(loc));
                 }
                 return list;
             }
@@ -274,7 +300,7 @@ public class PlayerListener implements Listener {
                 for (int i = 0; i <= menu.getCurrentMaxPage(); i++) {
                     if (i == count) {
                         for (ItemStack item : inv.getContents()) {
-                            if (ShopUtil.isShopItem(item)) continue;
+                            if (!ShopUtil.isShopItemsData(item)) continue;
                             list.add(item);
                         }
                         continue;
@@ -284,7 +310,7 @@ public class PlayerListener implements Listener {
                     for (Object obj : map.values().stream().toList()) {
                         if (obj instanceof ArtButton button) {
                             ItemStack stack = button.getItemStack();
-                            if (ShopUtil.isShopItem(stack)) continue;
+                            if (!ShopUtil.isShopItemsData(stack)) continue;
                             list.add(stack);
                         }
                     }

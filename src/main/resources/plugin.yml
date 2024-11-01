@@ -3,15 +3,18 @@ version: '1.0.0'
 main: net.azisaba.plugin.NPCShop
 api-version: '1.20'
 
+load: POSTWORLD
 depend:
   - LibsDisguises
+  - packetevents
 softdepend:
   - MythicMobs
 
 commands:
-  shop:
+  npcshop:
     permission: npcshop.command.shop
     description: NPCShopのメインコマンド。
+    aliases: [ shop, ns ]
 
 permissions:
   npcshop.sql.notifications:

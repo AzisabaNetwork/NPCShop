@@ -9,6 +9,9 @@ public record ShopEntity(String name, EntityType type) {
 
     @NotNull
     public static String getString(Component comp) {
-        return LegacyComponentSerializer.legacyAmpersand().serialize(comp);
+        String s = LegacyComponentSerializer.legacyAmpersand().serialize(comp);
+        s = s.substring(3);
+        s = s.substring(0, s.length() - 3);
+        return s;
     }
 }

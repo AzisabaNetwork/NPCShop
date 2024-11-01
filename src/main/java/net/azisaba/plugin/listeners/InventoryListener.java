@@ -2,11 +2,11 @@ package net.azisaba.plugin.listeners;
 
 import com.github.bea4dev.artgui.menu.ArtGUIHolder;
 import net.azisaba.plugin.NPCShop;
-import net.azisaba.plugin.utils.Util;
-import net.azisaba.plugin.npcshop.ShopHolder;
 import net.azisaba.plugin.npcshop.NPCShopItem;
-import net.azisaba.plugin.utils.Keys;
+import net.azisaba.plugin.npcshop.ShopHolder;
 import net.azisaba.plugin.npcshop.ShopUtil;
+import net.azisaba.plugin.utils.Keys;
+import net.azisaba.plugin.utils.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
@@ -39,6 +39,17 @@ public class InventoryListener implements Listener {
         pm.registerEvents(new InventoryListener.Close(), plugin);
     }
 
+    protected void processInventory(ItemStack item, Inventory inv, int i, NamespacedKey key) {
+        if (item == null) return;
+        if (!Util.isMythicItem(item)) {
+            ItemMeta meta = item.getItemMeta();
+            meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "true");
+            meta.getPersistentDataContainer().set(Keys.SHOP_MYTHIC, PersistentDataType.STRING,  item.getType().toString().toLowerCase());
+            item.setItemMeta(meta);
+            inv.setItem(i, item);
+        }
+    }
+
     public static class Open extends InventoryListener {
 
         @EventHandler
@@ -46,15 +57,16 @@ public class InventoryListener implements Listener {
             if (!(e.getInventory().getHolder() instanceof ShopHolder)) return;
             Inventory inv = e.getPlayer().getInventory();
             for (int i = 0; i < inv.getSize(); i++) {
-                ItemStack item = inv.getItem(i);
-                if (item == null) continue;
-                if (!Util.isMythicItem(item)) {
-                    ItemMeta meta = item.getItemMeta();
-                    meta.getPersistentDataContainer().set(Keys.SHOP_EDITOR_TEMP, PersistentDataType.STRING, "true");
-                    meta.getPersistentDataContainer().set(new NamespacedKey("mythicmobs", "type"), PersistentDataType.STRING,  item.getType().toString().toLowerCase());
-                    item.setItemMeta(meta);
-                    inv.setItem(i, item);
-                }
+                processInventory(inv.getItem(i), inv, i, Keys.SHOP_EDITOR_TEMP);
+            }
+        }
+
+        @EventHandler
+        public void onBuy(@NotNull InventoryOpenEvent e) {
+            if (!(e.getInventory().getHolder() instanceof ArtGUIHolder)) return;
+            Inventory inv = e.getPlayer().getInventory();
+            for (int i = 0; i < inv.getSize(); i++) {
+                processInventory(inv.getItem(i), inv, i, Keys.SHOP_BUY_TEMP);
             }
         }
     }
@@ -65,8 +77,8 @@ public class InventoryListener implements Listener {
         public void onClose(@NotNull InventoryCloseEvent e) {
             if (!(e.getInventory().getHolder() instanceof ShopHolder)) return;
             HumanEntity h = e.getPlayer();
-            processInventory(h.getInventory());
-            Inventory inv = processInventory(e.getInventory());
+            processInventory(h.getInventory(), Keys.SHOP_EDITOR_TEMP);
+            Inventory inv = processInventory(e.getInventory(), Keys.SHOP_EDITOR_TEMP);
             for (ItemStack item : inv.getContents()) {
                 if (item == null) continue;
                 if (Util.isMythicItem(item)) {
@@ -75,16 +87,23 @@ public class InventoryListener implements Listener {
             }
         }
 
-        public Inventory processInventory(@NotNull Inventory inv) {
+        @EventHandler
+        public void onBuy(@NotNull InventoryCloseEvent e) {
+            if (!(e.getInventory().getHolder() instanceof ArtGUIHolder)) return;
+            processInventory(e.getPlayer().getInventory(), Keys.SHOP_BUY_TEMP);
+        }
+
+        public static Inventory processInventory(@NotNull Inventory inv, NamespacedKey key) {
             for (int i = 0; i < inv.getSize(); i++) {
                 ItemStack item = inv.getItem(i);
                 if (item == null) continue;
                 ItemMeta meta = item.getItemMeta();
-                if (meta.getPersistentDataContainer().has(Keys.SHOP_EDITOR_TEMP)) {
-                    meta.getPersistentDataContainer().remove(Keys.SHOP_EDITOR_TEMP);
+                if (meta.getPersistentDataContainer().has(Keys.SHOP_ITEM_DATA)) continue;
+                if (meta.getPersistentDataContainer().has(key)) {
+                    meta.getPersistentDataContainer().remove(key);
 
-                    if (!meta.getPersistentDataContainer().has(Keys.SHOP_ITEM_DATA)) {
-                        meta.getPersistentDataContainer().remove(new NamespacedKey("mythicmobs", "type"));
+                    if (meta.getPersistentDataContainer().has(Keys.SHOP_MYTHIC)) {
+                        meta.getPersistentDataContainer().remove(Keys.SHOP_MYTHIC);
                     }
                 }
                 item.setItemMeta(meta);
@@ -129,6 +148,13 @@ public class InventoryListener implements Listener {
                     processItem(e, e.getCursor(), Util.isMythicItem(e.getCursor()));
                 } else if (e.getSlot() < 7) {
                     processItem(e, e.getCursor(), Util.isMythicItem(e.getCursor()) && !ShopUtil.isShopItemsData(e.getCursor()));
+
+                } else if (e.getSlot() == 8) {
+                    ItemStack check = inv.getItem(8);
+                    if (check!= null && Util.isMythicItem(check) && check.getType() != ShopHolder.getPane().getType()) {
+                        e.setCurrentItem(ShopHolder.getPane());
+                        e.setCursor(check);
+                    }
                 }
             }
         }
@@ -136,7 +162,7 @@ public class InventoryListener implements Listener {
         public void processItem(InventoryClickEvent e, ItemStack cur, boolean is) {
             if (cur == null) {
                 if (e.getCurrentItem() != null) {
-                    e.setCursor(e.getCurrentItem());
+                    e.setCursor(null);
                     e.setCurrentItem(ShopHolder.getPane());
                 } else {
                     e.setCurrentItem(ShopHolder.getPane());
@@ -144,7 +170,7 @@ public class InventoryListener implements Listener {
             } else {
                 if (!(is)) return;
                 if (e.getCurrentItem() != null) {
-                    e.setCursor(e.getCurrentItem());
+                    e.setCursor(null);
                     e.setCurrentItem(cur);
                 } else {
                     e.setCurrentItem(cur);

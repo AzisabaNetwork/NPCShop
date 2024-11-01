@@ -33,10 +33,28 @@ public class SaveDB extends DBConnector {
             long time = System.currentTimeMillis();
             try (Connection con = dataSource.getConnection()) {
                 if (delete) new DBShop().delete(con);
-                for (ShopLocation ab : DBShop.getShopItems().keySet()) {
-                    List<ItemStack> list = DBShop.getShopItems().get(ab).stream().toList();
-                    new DBShop().set(con, ab, list);
+                if (!DBShop.getShopItems().isEmpty()) {
+                    for (ShopLocation ab : DBShop.getShopItems().keySet()) {
+                        List<ItemStack> list = DBShop.getShopItems().get(ab).stream().toList();
+                        new DBShop().set(con, ab, list);
+                    }
                 }
+            }
+            time = System.currentTimeMillis() - time;
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!p.hasPermission("npcshop.sql.notifications")) continue;
+                p.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize("&fショップ情報: &b" + time + "ms"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteAll() {
+        try {
+            long time = System.currentTimeMillis();
+            try (Connection con = dataSource.getConnection()) {
+                new DBShop().delete(con);
             }
             time = System.currentTimeMillis() - time;
             for (Player p : Bukkit.getOnlinePlayers()) {

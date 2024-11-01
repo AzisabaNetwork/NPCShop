@@ -37,7 +37,7 @@ public class DBConnector {
                                 "entity_name varchar(40), " +
                                 "entity_type varchar(20), " +
                                 "PRIMARY KEY (name, x, y, z, slot)" +
-                                ")");
+                                ");");
                     }
                 }
             }

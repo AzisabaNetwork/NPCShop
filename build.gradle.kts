@@ -16,11 +16,13 @@ repositories {
     maven("https://mvn.lumine.io/repository/maven-public/")
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://oss.sonatype.org/content/groups/public/")
+    maven("https://repo.codemc.io/repository/maven-releases/")
 }
 
 dependencies {
     compileOnly(libs.io.papermc.paper.paper.api)
     compileOnly("io.lumine:Mythic-Dist:5.7.2")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.5.0")
     compileOnly("LibsDisguises:LibsDisguises:10.0.44") {
         exclude("org.spigotmc", "spigot")
     }
@@ -50,8 +52,8 @@ tasks {
     base.archivesName.set("NPCShop")
 
     shadowJar {
-        relocate("org.jetbrains", "net.azisaba.mmocore.lib.org.jetbrains")
-        relocate("com.zaxxer.hikari", "net.azisaba.mmocore.lib.com.zaxxer")
-        relocate("com.github.Be4rJP", "net.azisaba.mmocore.lib.com.github.Be4rJP")
+        relocate("org.jetbrains", "net.azisaba.npcshop.lib.org.jetbrains")
+        relocate("com.zaxxer.hikari", "net.azisaba.npcshop.lib.com.zaxxer")
+        relocate("com.github.Be4rJP", "net.azisaba.npcshop.lib.com.github.Be4rJP")
     }
 }
