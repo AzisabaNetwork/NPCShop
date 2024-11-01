@@ -2,8 +2,10 @@
 
 config.ymlのDatabaseの項目を入力し、useをtrueにすることで動作。
 
+```
 Database:
-  use: false 
+  use: false
+```
 -------------------------------------------------------------------
 
 EntityOptions.UseMythicMobsの項目は、NPCとしてMMのmobを使用するかのオプションです。
