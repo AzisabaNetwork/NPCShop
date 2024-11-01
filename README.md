@@ -1,7 +1,7 @@
 プラグインを起動させた最初の段階では動きません。
 -
 
-config.ymlのDatabaseの項目を入力し、useをtrueにすることで動作。
+config.ymlのDatabaseの項目を正しく入力し、最後にuseをtrueにすることで動作。
 
 ```
 Database:
