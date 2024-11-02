@@ -10,8 +10,8 @@ import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.persistence.PersistentDataType;
@@ -35,6 +35,7 @@ public class NPCEntity {
     private void npc(@NotNull Location loc, EntityType type, float f) {
         if (loc.getWorld() == null) return;
         if (!loc.getChunk().isLoaded()) return;
+        if (loc.getWorld().getPlayerCount() == 0) return;
 
         String name = getPlugin().getConfig().getString("EntityOptions.DefaultsDisplayName", "&b&lNPCShop");
         if (DBShop.getShopEntity().containsKey(ShopLocation.adapt(loc))) {
@@ -73,7 +74,7 @@ public class NPCEntity {
 
     private static float despawn(@NotNull Location loc) {
         float f = 0;
-        for (LivingEntity living : loc.getNearbyLivingEntities(0.25, 0.25, 0.25).stream().toList()) {
+        for (Entity living : loc.getNearbyEntities(0.25, 0.25, 0.25).stream().toList()) {
             if (living.getPersistentDataContainer().has(Keys.SHOP_KEEPER, PersistentDataType.STRING)) {
                 f = living.getYaw();
                 living.remove();
