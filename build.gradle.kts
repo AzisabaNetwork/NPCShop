@@ -21,7 +21,7 @@ repositories {
 dependencies {
     compileOnly(libs.io.papermc.paper.paper.api)
     compileOnly("io.lumine:Mythic-Dist:5.7.2")
-    compileOnly("net.azisaba:ItemLoreLib:1.0.0")
+    compileOnly("net.azisaba:ItemLoreLib:1.0.1")
     compileOnly("LibsDisguises:LibsDisguises:10.0.44") {
         exclude("org.spigotmc", "spigot")
     }
@@ -32,7 +32,7 @@ dependencies {
 }
 
 group = "net.azisaba"
-version = "1.1.0"
+version = "1.1.1"
 description = "NPCShop"
 
 java {

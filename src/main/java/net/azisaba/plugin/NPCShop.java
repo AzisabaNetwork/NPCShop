@@ -5,10 +5,7 @@ import net.azisaba.plugin.commands.ShopCommand;
 import net.azisaba.plugin.data.SaveDB;
 import net.azisaba.plugin.data.database.DBConnector;
 import net.azisaba.plugin.data.database.DBShop;
-import net.azisaba.plugin.listeners.EntityListener;
-import net.azisaba.plugin.listeners.InventoryListener;
-import net.azisaba.plugin.listeners.ItemListener;
-import net.azisaba.plugin.listeners.PlayerListener;
+import net.azisaba.plugin.listeners.*;
 import net.azisaba.plugin.npcshop.NPCEntity;
 import net.azisaba.plugin.npcshop.ShopLocation;
 import net.azisaba.plugin.utils.Util;
@@ -50,6 +47,7 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
         new InventoryListener().initialize(this);
         new EntityListener().initialize(this);
         new ItemListener().initialize(this);
+        new VillagerListener().initialize(this);
     }
 
     @Override
