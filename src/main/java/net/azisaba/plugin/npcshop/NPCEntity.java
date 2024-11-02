@@ -1,6 +1,5 @@
 package net.azisaba.plugin.npcshop;
 
-import me.libraryaddict.disguise.DisguiseAPI;
 import me.libraryaddict.disguise.disguisetypes.DisguiseType;
 import me.libraryaddict.disguise.disguisetypes.MobDisguise;
 import net.azisaba.plugin.NPCShop;
@@ -29,26 +28,14 @@ public class NPCEntity {
     }
 
     public void spawn(@NotNull Location loc, EntityType type) {
-        for (LivingEntity l : loc.getNearbyLivingEntities(0.25, 0.25, 0.25).stream().toList()) {
-            if (l.getPersistentDataContainer().has(Keys.SHOP_KEEPER, PersistentDataType.STRING)) {
-                update(l, type);
-                return;
-            }
-        }
-        npc(loc, type);
+        float f = despawn(loc);
+        npc(loc, type, f);
     }
 
-    public void update(LivingEntity living, EntityType type) {
-        DisguiseType t = DisguiseType.getType(type);
-        if (DisguiseAPI.isDisguised(living)) {
-            living.getWorld().getPlayers().forEach(p -> DisguiseAPI.getDisguise(p, living));
-        } else {
-            MobDisguise mob = new MobDisguise(t).setEntity(living);
-            mob.startDisguise();
-        }
-    }
+    private void npc(@NotNull Location loc, EntityType type, float f) {
+        if (loc.getWorld() == null) return;
+        if (!loc.getChunk().isLoaded()) return;
 
-    private void npc(@NotNull Location loc, EntityType type) {
         String name = getPlugin().getConfig().getString("EntityOptions.DefaultsDisplayName", "&b&lNPCShop");
         if (DBShop.getShopEntity().containsKey(ShopLocation.adapt(loc))) {
             ShopEntity entity = DBShop.getShopEntity().get(ShopLocation.adapt(loc));
@@ -66,7 +53,7 @@ public class NPCEntity {
         entity.setAI(false);
         entity.setRemoveWhenFarAway(true);
         entity.setCustomNameVisible(false);
-        entity.setRotation((float) 0, 0);
+        entity.setRotation(f, 0);
         entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(name));
         entity.getPersistentDataContainer().set(Keys.SHOP_KEEPER, PersistentDataType.STRING, "true");
         entity.getPersistentDataContainer().set(Keys.SHOP_TYPE, PersistentDataType.STRING, type.name());
@@ -81,11 +68,17 @@ public class NPCEntity {
     }
 
     public static void despawn(@NotNull ShopLocation l) {
-        Location loc = new Location(l.w(), l.x(), l.y(), l.z());
+        despawn(new Location(l.w(), l.x(), l.y(), l.z()));
+    }
+
+    private static float despawn(@NotNull Location loc) {
+        float f = 0;
         for (LivingEntity living : loc.getNearbyLivingEntities(0.25, 0.25, 0.25).stream().toList()) {
             if (living.getPersistentDataContainer().has(Keys.SHOP_KEEPER, PersistentDataType.STRING)) {
+                f = living.getYaw();
                 living.remove();
             }
         }
+        return f;
     }
 }

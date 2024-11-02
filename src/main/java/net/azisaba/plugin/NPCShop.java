@@ -1,8 +1,6 @@
 package net.azisaba.plugin;
 
 import com.github.bea4dev.artgui.ArtGUI;
-import com.github.retrooper.packetevents.PacketEvents;
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import net.azisaba.plugin.commands.ShopCommand;
 import net.azisaba.plugin.data.SaveDB;
 import net.azisaba.plugin.data.database.DBConnector;
@@ -11,7 +9,6 @@ import net.azisaba.plugin.listeners.EntityListener;
 import net.azisaba.plugin.listeners.InventoryListener;
 import net.azisaba.plugin.listeners.ItemListener;
 import net.azisaba.plugin.listeners.PlayerListener;
-import net.azisaba.plugin.lore.LoreEditor;
 import net.azisaba.plugin.npcshop.NPCEntity;
 import net.azisaba.plugin.npcshop.ShopLocation;
 import net.azisaba.plugin.utils.Util;
@@ -24,18 +21,9 @@ import java.util.Objects;
 
 public final class NPCShop extends JavaPlugin implements Main, Task {
 
-
-    @Override
-    public void onLoad() {
-        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
-        PacketEvents.getAPI().load();
-        PacketEvents.getAPI().getEventManager().registerListener(new LoreEditor());
-    }
-
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        PacketEvents.getAPI().init();
 
         registerClockTimer();
         registerListeners();
@@ -44,7 +32,6 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
 
     @Override
     public void onDisable() {
-        PacketEvents.getAPI().terminate();
         for  (ShopLocation loc : DBShop.getShopEntity().keySet()) {
             NPCEntity.despawn(loc);
         }
@@ -69,20 +56,20 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
     public void registerClockTimer() {
         if (!getConfig().getBoolean("Database.use", false)) return;
         runAsync(() -> new DBConnector().initialize(this));
-        runAsyncDelayed(() -> new DBShop().load(), 40);
+        runAsyncDelayed(() -> new DBShop().load(), 20);
         runSyncTimer(() -> new SaveDB().save(false), 18000, 18000);
 
         runSyncDelayed(() -> DBShop.getShopEntity().forEach((key, value) -> {
             if (value.type() == null) return;
             NPCEntity.despawn(key);
-        }), 60);
+        }), 30);
         runAsyncTimer(() -> {
             if (Util.isEnabled()) return;
             DBShop.getShopEntity().forEach((key, value) -> {
                 if (value.type() == null) return;
                 runSync(() -> new NPCEntity().spawn(ShopLocation.adapt(key), value.type()));
             });
-        }, 80, 160);
+        }, 50, 300);
     }
 
     @NotNull

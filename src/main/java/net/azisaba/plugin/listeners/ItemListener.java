@@ -1,7 +1,7 @@
 package net.azisaba.plugin.listeners;
 
+import net.azisaba.plugin.ItemLoreEditEvent;
 import net.azisaba.plugin.NPCShop;
-import net.azisaba.plugin.event.ItemLoreEditEvent;
 import net.azisaba.plugin.npcshop.NPCShopItem;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
