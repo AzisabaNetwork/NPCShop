@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class NPCShopItem {
@@ -32,12 +33,22 @@ public class NPCShopItem {
         return mmid + " " + mythic.getAmount();
     }
 
+    private static final int max = JavaPlugin.getPlugin(NPCShop.class).getConfig().getInt("ShopOptions.MaxStackPerItem", 20);
+
     public record Deserializer(ItemStack item, List<ItemStack> list)  {
 
         public Deserializer(@NotNull ItemStack item, @NotNull List<ItemStack> list) {
             int i = 0;
             ItemMeta meta = item.getItemMeta();
-            while (i < 100) {
+            for (NamespacedKey key: meta.getPersistentDataContainer().getKeys()) {
+                if (key.getNamespace().equals("npcshop")) {
+                    break;
+                }
+                this.item = item;
+                this.list = new ArrayList<>();
+                return;
+            }
+            while (i < max) {
                 NamespacedKey key = new NamespacedKey("npcshop", "recipe_" + i);
                 if (meta.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
                     String s = meta.getPersistentDataContainer().get(key, PersistentDataType.STRING);
@@ -57,8 +68,6 @@ public class NPCShopItem {
     }
 
     public record Serializer(ItemStack item, List<ItemStack> list) {
-
-        private static final int max = JavaPlugin.getPlugin(NPCShop.class).getConfig().getInt("ShopOptions.MaxStackPerItem", 20);
 
         public Serializer(@NotNull ItemStack item, @NotNull List<ItemStack> list) {
             ItemMeta meta = item.getItemMeta();

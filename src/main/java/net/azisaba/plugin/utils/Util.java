@@ -31,7 +31,7 @@ public class Util {
     }
 
     public static boolean isMythicItem(ItemStack item) {
-        if (isMythicEnabled()) {
+        if (isMythic()) {
             return MythicBukkit.inst().getItemManager().isMythicItem(item);
         } else {
             if (item == null || !item.hasItemMeta()) return false;
@@ -41,7 +41,7 @@ public class Util {
     }
 
     public static String getMythicID(ItemStack item) {
-        if (isMythicEnabled()) {
+        if (isMythic()) {
             return MythicBukkit.inst().getItemManager().getMythicTypeFromItem(item);
         } else {
             return item.getItemMeta().getPersistentDataContainer().
@@ -51,7 +51,7 @@ public class Util {
 
     @Nullable
     public static ItemStack getMythicItemStack(String mmid, int amount) {
-        if (isMythicEnabled()) {
+        if (isMythic()) {
             return MythicBukkit.inst().getItemManager().getItemStack(mmid, amount);
         } else {
             try {
@@ -70,7 +70,7 @@ public class Util {
     @Nullable
     @SuppressWarnings("unused")
     public static MythicItem getMythicItem(String mmid) {
-        if (isMythicEnabled()) {
+        if (isMythic()) {
             return mmid == null ? null : MythicBukkit.inst().getItemManager().getItem(mmid).orElse(null);
         } else {
             return null;

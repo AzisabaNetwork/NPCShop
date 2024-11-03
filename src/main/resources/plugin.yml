@@ -1,12 +1,12 @@
 name: NPCShop
-version: '1.1.2'
+version: '1.2.0'
 main: net.azisaba.plugin.NPCShop
 api-version: '1.20'
 
 load: POSTWORLD
 depend:
   - LibsDisguises
-  - ItemLoreLib
+  - LoreEditor
 softdepend:
   - MythicMobs
 

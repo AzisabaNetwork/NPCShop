@@ -1,19 +1,29 @@
 package net.azisaba.plugin;
 
 import com.github.bea4dev.artgui.ArtGUI;
+import net.azisaba.loreeditor.api.event.EventBus;
+import net.azisaba.loreeditor.api.event.ItemEvent;
 import net.azisaba.plugin.commands.ShopCommand;
 import net.azisaba.plugin.data.SaveDB;
 import net.azisaba.plugin.data.database.DBConnector;
 import net.azisaba.plugin.data.database.DBShop;
-import net.azisaba.plugin.listeners.*;
+import net.azisaba.plugin.listeners.EntityListener;
+import net.azisaba.plugin.listeners.InventoryListener;
+import net.azisaba.plugin.listeners.PlayerListener;
+import net.azisaba.plugin.listeners.VillagerListener;
 import net.azisaba.plugin.npcshop.NPCEntity;
+import net.azisaba.plugin.npcshop.NPCShopItem;
 import net.azisaba.plugin.npcshop.ShopLocation;
 import net.azisaba.plugin.utils.Util;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 public final class NPCShop extends JavaPlugin implements Main, Task {
@@ -25,6 +35,7 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
         registerClockTimer();
         registerListeners();
         registerCommands();
+        registerLore();
     }
 
     @Override
@@ -46,8 +57,23 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
         new PlayerListener().initialize(this);
         new InventoryListener().initialize(this);
         new EntityListener().initialize(this);
-        new ItemListener().initialize(this);
         new VillagerListener().initialize(this);
+    }
+
+    public void registerLore() {
+        EventBus.INSTANCE.register(this, ItemEvent.class, 0, e-> {
+            NPCShopItem.Deserializer data = new NPCShopItem.Deserializer(e.getBukkitItem(), new ArrayList<>());
+            if (data.list().isEmpty()) return;
+            e.addLore(Component.text(""));
+            e.addLore(Component.text("§f§l- 要求交換素材 -"));
+
+            for (ItemStack is : data.list()) {
+                if (is == null) continue;
+                String display = LegacyComponentSerializer.legacyAmpersand().serialize(is.displayName()).replace("&", "§");
+                e.addLore(Component.text("§f" + is.getAmount() + " × §r" + display));
+            }
+            e.addLore(Component.text("§f§l------------"));
+        });
     }
 
     @Override

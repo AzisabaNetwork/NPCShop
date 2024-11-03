@@ -54,9 +54,11 @@ public class DBConnector {
         String database = plugin.getConfig().getString("Database.database");
         String username = plugin.getConfig().getString("Database.username");
         String password = plugin.getConfig().getString("Database.password");
+        String scheme = plugin.getConfig().getString("Database.scheme");
 
-        config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
-        config.setMaximumPoolSize(30);
+        config.setJdbcUrl(scheme + "://" + host + ":" + port + "/" + database);
+        config.setConnectionTimeout(30000);
+        config.setMaximumPoolSize(10);
         config.setUsername(username);
         config.setPassword(password);
 

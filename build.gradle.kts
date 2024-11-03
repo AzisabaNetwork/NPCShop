@@ -16,12 +16,13 @@ repositories {
     maven("https://mvn.lumine.io/repository/maven-public/")
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://oss.sonatype.org/content/groups/public/")
+    maven("https://repo.azisaba.net/repository/maven-public/")
 }
 
 dependencies {
     compileOnly(libs.io.papermc.paper.paper.api)
     compileOnly("io.lumine:Mythic-Dist:5.7.2")
-    compileOnly("net.azisaba:ItemLoreLib:1.0.1")
+    compileOnly("net.azisaba.loreeditor:plugin:1.2.0")
     compileOnly("LibsDisguises:LibsDisguises:10.0.44") {
         exclude("org.spigotmc", "spigot")
     }
@@ -32,7 +33,7 @@ dependencies {
 }
 
 group = "net.azisaba"
-version = "1.1.2"
+version = "1.2.0"
 description = "NPCShop"
 
 java {
