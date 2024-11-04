@@ -141,7 +141,6 @@ public class ShopCommand implements TabExecutor {
     }
 
     private boolean reload(@NotNull Player p) {
-        getPlugin().saveDefaultConfig();
         getPlugin().reloadConfig();
         p.sendMessage(Component.text("リロードしました。"));
         return true;

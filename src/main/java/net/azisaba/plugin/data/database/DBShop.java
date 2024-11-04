@@ -88,7 +88,7 @@ public class DBShop extends DBConnector {
                         ShopLocation loc = new ShopLocation(w, x, y, z);
 
                         ItemStack item = ItemStack.deserializeBytes(result.getBytes("data"));
-                        if (Util.isMythicEnabled()) {
+                        if (Util.isMythic()) {
                             String mmid = Util.getMythicID(item);
                             ItemStack mythic = Util.getMythicItemStack(mmid, item.getAmount());
                             if (mythic == null) continue;

@@ -3,6 +3,7 @@ package net.azisaba.plugin;
 import com.github.bea4dev.artgui.ArtGUI;
 import net.azisaba.loreeditor.api.event.EventBus;
 import net.azisaba.loreeditor.api.event.ItemEvent;
+import net.azisaba.loreeditor.libs.net.kyori.adventure.text.Component;
 import net.azisaba.plugin.commands.ShopCommand;
 import net.azisaba.plugin.data.SaveDB;
 import net.azisaba.plugin.data.database.DBConnector;
@@ -15,7 +16,6 @@ import net.azisaba.plugin.npcshop.NPCEntity;
 import net.azisaba.plugin.npcshop.NPCShopItem;
 import net.azisaba.plugin.npcshop.ShopLocation;
 import net.azisaba.plugin.utils.Util;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
@@ -61,16 +61,16 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
     }
 
     public void registerLore() {
-        EventBus.INSTANCE.register(this, ItemEvent.class, 0, e-> {
+        EventBus.INSTANCE.register(this, ItemEvent.class, 0, e -> {
             NPCShopItem.Deserializer data = new NPCShopItem.Deserializer(e.getBukkitItem(), new ArrayList<>());
             if (data.list().isEmpty()) return;
-            e.addLore(Component.text(""));
-            e.addLore(Component.text("§f§l- 要求交換素材 -"));
+            e.addLore(net.azisaba.loreeditor.libs.net.kyori.adventure.text.Component.text(""));
+            e.addLore(net.azisaba.loreeditor.libs.net.kyori.adventure.text.Component.text("§f§l- 要求交換素材 -"));
 
             for (ItemStack is : data.list()) {
                 if (is == null) continue;
                 String display = LegacyComponentSerializer.legacyAmpersand().serialize(is.displayName()).replace("&", "§");
-                e.addLore(Component.text("§f" + is.getAmount() + " × §r" + display));
+                e.addLore(net.azisaba.loreeditor.libs.net.kyori.adventure.text.Component.text("§f" + is.getAmount() + " × §r" + display));
             }
             e.addLore(Component.text("§f§l------------"));
         });

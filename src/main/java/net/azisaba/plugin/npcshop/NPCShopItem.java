@@ -40,10 +40,12 @@ public class NPCShopItem {
         public Deserializer(@NotNull ItemStack item, @NotNull List<ItemStack> list) {
             int i = 0;
             ItemMeta meta = item.getItemMeta();
+            boolean found = false;
             for (NamespacedKey key: meta.getPersistentDataContainer().getKeys()) {
-                if (key.getNamespace().equals("npcshop")) {
-                    break;
-                }
+                if (!key.getNamespace().equals("npcshop")) continue;
+                found = true;
+            }
+            if (!found) {
                 this.item = item;
                 this.list = new ArrayList<>();
                 return;

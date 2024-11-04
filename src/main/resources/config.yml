@@ -2,6 +2,7 @@ EntityOptions:
   #MythicMobsでショップ作成を行う場合は、ShopにしたいMobのFactionに「NPCShop」が含まれていれば自動で認識します。
   #クリエで名前を付けたネームタグをNPCに付けるとShopの表示名を変更できます。Inventory内は不可。
   UseMythicMobs: false
+  UseMythicItem: true
   DefaultsDisplayName: "&b&lNPCShop"
 
 ShopOptions:

@@ -1,5 +1,6 @@
 package net.azisaba.plugin.npcshop;
 
+import me.libraryaddict.disguise.DisguiseAPI;
 import me.libraryaddict.disguise.disguisetypes.DisguiseType;
 import me.libraryaddict.disguise.disguisetypes.MobDisguise;
 import net.azisaba.plugin.NPCShop;
@@ -77,6 +78,9 @@ public class NPCEntity {
         for (Entity living : loc.getNearbyEntities(0.25, 0.25, 0.25).stream().toList()) {
             if (living.getPersistentDataContainer().has(Keys.SHOP_KEEPER, PersistentDataType.STRING)) {
                 f = living.getYaw();
+                if (DisguiseAPI.isDisguised(living)) {
+                    DisguiseAPI.getDisguise(living).stopDisguise();
+                }
                 living.remove();
             }
         }
