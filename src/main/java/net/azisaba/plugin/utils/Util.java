@@ -52,7 +52,12 @@ public class Util {
     @Nullable
     public static ItemStack getMythicItemStack(String mmid, int amount) {
         if (isMythic()) {
-            return MythicBukkit.inst().getItemManager().getItemStack(mmid, amount);
+            MythicBukkit.inst().getItemManager().getItemStack(mmid, amount);
+            ItemStack i = MythicBukkit.inst().getItemManager().getItemStack(mmid, amount);
+            if (i != null) {
+                i.setAmount(amount);
+            }
+            return i;
         } else {
             try {
                 return new ItemStack(Material.valueOf(mmid.toUpperCase()), amount);
@@ -102,7 +107,7 @@ public class Util {
     @Contract("_, _ -> param1")
     public static ItemStack dataConvert(@NotNull ItemStack base, @NotNull ItemStack data) {
         ItemMeta baseMeta = base.getItemMeta();
-        baseMeta.getPersistentDataContainer().copyTo(data.getItemMeta().getPersistentDataContainer(), true);
+        data.getItemMeta().getPersistentDataContainer().copyTo(baseMeta.getPersistentDataContainer(), true);
         base.setItemMeta(baseMeta);
 
         return base;

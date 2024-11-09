@@ -72,7 +72,7 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
                 String display = LegacyComponentSerializer.legacyAmpersand().serialize(is.displayName()).replace("&", "§");
                 e.addLore(net.azisaba.loreeditor.libs.net.kyori.adventure.text.Component.text("§f" + is.getAmount() + " × §r" + display));
             }
-            e.addLore(Component.text("§f§l------------"));
+            e.addLore(Component.text("§f§l---------------------"));
         });
     }
 

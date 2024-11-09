@@ -45,14 +45,16 @@ public class DBShop extends DBConnector {
     }
 
     public void set(Connection con, @NotNull ShopLocation loc, @NotNull List<ItemStack> list) {
+        if (!shopItemsMap.containsKey(loc)) return;
+        ShopEntity shop = shopEntityMap.get(loc);
+        String t = shop.type() == null ? EntityType.VILLAGER.name() : shop.type().name();
         try {
             int i = 0;
             for (ItemStack item : list) {
                 if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
+
                 try (PreparedStatement state = con.prepareStatement("INSERT INTO " + shopTable + " (name, x, y, z, slot, data, entity_name, entity_type) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE data =?, entity_name=?, entity_type=?;")) {
 
-                    ShopEntity shop = shopEntityMap.containsKey(loc) ? shopEntityMap.get(loc) : new ShopEntity(null, null);
-                    String t = shop.type() == null ? null : shop.type().name();
 
                     state.setString(1, loc.w().getName());
                     state.setInt(2, loc.x());

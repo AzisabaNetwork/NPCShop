@@ -1,5 +1,5 @@
 name: NPCShop
-version: '1.2.2'
+version: '1.2.4'
 main: net.azisaba.plugin.NPCShop
 api-version: '1.20'
 

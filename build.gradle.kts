@@ -33,7 +33,7 @@ dependencies {
 }
 
 group = "net.azisaba"
-version = "1.2.2"
+version = "1.2.4"
 description = "NPCShop"
 
 java {
