@@ -1,6 +1,7 @@
 package net.azisaba.plugin;
 
 import com.github.bea4dev.artgui.ArtGUI;
+import com.github.bea4dev.artgui.menu.ArtGUIHolder;
 import net.azisaba.loreeditor.api.event.EventBus;
 import net.azisaba.loreeditor.api.event.ItemEvent;
 import net.azisaba.loreeditor.libs.net.kyori.adventure.text.Component;
@@ -14,10 +15,13 @@ import net.azisaba.plugin.listeners.PlayerListener;
 import net.azisaba.plugin.listeners.VillagerListener;
 import net.azisaba.plugin.npcshop.NPCEntity;
 import net.azisaba.plugin.npcshop.NPCShopItem;
+import net.azisaba.plugin.npcshop.ShopHolder;
 import net.azisaba.plugin.npcshop.ShopLocation;
 import net.azisaba.plugin.utils.Util;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
@@ -40,6 +44,13 @@ public final class NPCShop extends JavaPlugin implements Main, Task {
 
     @Override
     public void onDisable() {
+        for (Player p: Bukkit.getOnlinePlayers()) {
+            InventoryHolder h = p.getOpenInventory().getTopInventory().getHolder();
+            if (h instanceof ArtGUIHolder || h instanceof ShopHolder) {
+                p.sendMessage(net.kyori.adventure.text.Component.text("§aプラグインがリロードされるため、画面を閉じました。"));
+                p.closeInventory();
+            }
+        }
         for  (ShopLocation loc : DBShop.getShopEntity().keySet()) {
             NPCEntity.despawn(loc);
         }
